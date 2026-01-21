@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+# backend/data/  <-- Commented out to allow assets; specific ignores added below
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+frontend/dist/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# Project Specific - Logs & Data
+backend/data/logs/
+backend/data/sessions/
+*.log
+.env
+*.db
+*.sqlite
+*.sqlite3
+backend/data/*.db
+
+# Temporary Test Files
+v1_test/session.json
+v1_test/__pycache__/
+_archive/
