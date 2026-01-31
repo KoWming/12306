@@ -1,0 +1,13 @@
+services:
+  12306-assistant:
+    image: kowming/12306-assistant:latest
+    container_name: 12306-assistant
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      TZ: Asia/Shanghai
+      PYTHONUNBUFFERED: 1
+      APP_PORT: 8000
+    volumes:
+      # 持久化数据库
+      - ./data:/app/backend/data

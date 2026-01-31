@@ -6,25 +6,24 @@
 启动命令:
     uvicorn main:app --reload --host 0.0.0.0 --port 8000
 """
-
 import sys
 from pathlib import Path
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 
 # 添加父目录到路径（用于导入原始脚本模块）
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.core.config import get_settings, ensure_directories
 from app.core.database import init_db, close_db
-from app.api import auth, trains, tasks, users
+from app.api import auth, trains, tasks, users, config
 from app.tasks.scheduler import get_scheduler
 
 settings = get_settings()
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -63,7 +62,6 @@ async def lifespan(app: FastAPI):
     
     print("[关闭] 服务已关闭\n")
 
-
 # 创建应用
 app = FastAPI(
     title=settings.APP_NAME,
@@ -98,7 +96,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 # 全局异常处理
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
@@ -111,30 +108,57 @@ async def global_exception_handler(request, exc):
         }
     )
 
-
 # 注册路由
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(users.router, prefix=settings.API_V1_PREFIX)
 app.include_router(trains.router, prefix=settings.API_V1_PREFIX)
 app.include_router(tasks.router, prefix=settings.API_V1_PREFIX)
+app.include_router(config.router, prefix=settings.API_V1_PREFIX)
+app.include_router(config.router, prefix=settings.API_V1_PREFIX)
 
-
-# 根路由
-@app.get("/")
-async def root():
-    """API 根路由"""
-    return {
-        "name": settings.APP_NAME,
-        "version": settings.APP_VERSION,
-        "docs": "/docs",
-        "status": "running"
-    }
+# 挂载静态文件
+frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
+if (frontend_dist / "assets").exists():
+    app.mount("/assets", StaticFiles(directory=frontend_dist / "assets"), name="assets")
 
 
 @app.get("/health")
 async def health_check():
     """健康检查"""
     return {"status": "healthy"}
+
+
+@app.get("/")
+async def serve_root():
+    """根路径返回前端首页"""
+    if (frontend_dist / "index.html").exists():
+        return FileResponse(frontend_dist / "index.html")
+    return JSONResponse(
+        content={
+            "name": settings.APP_NAME,
+            "version": settings.APP_VERSION,
+            "status": "running",
+            "message": "Frontend not built or not found"
+        }
+    )
+
+# SPA Catch-all 路由
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    # 如果是 API 请求，返回 404 (由 api_router 处理，这里只处理未匹配的)
+    if full_path.startswith("api/"):
+        return JSONResponse({"error": "Not Found"}, status_code=404)
+        
+    # 尝试提供静态文件
+    static_file = frontend_dist / full_path
+    if static_file.is_file():
+        return FileResponse(static_file)
+
+    # 默认返回 index.html
+    if (frontend_dist / "index.html").exists():
+        return FileResponse(frontend_dist / "index.html")
+    
+    return "Frontend not built. Please run 'npm run build' in frontend directory.", 500
 
 
 # 开发时直接运行

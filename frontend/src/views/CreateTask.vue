@@ -9,8 +9,8 @@
         ref="formRef"
         :model="form" 
         :rules="rules" 
-        label-width="100px"
-        style="max-width: 800px;"
+        :label-width="isMobile ? 'auto' : '100px'"
+        :label-position="isMobile ? 'top' : 'right'"
       >
         <el-divider content-position="left">基本信息</el-divider>
         
@@ -19,7 +19,7 @@
         </el-form-item>
         
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :xs="12" :sm="12">
             <el-form-item label="出发站" prop="from_station">
               <el-select 
                 v-model="form.from_station" 
@@ -39,7 +39,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :xs="12" :sm="12">
             <el-form-item label="到达站" prop="to_station">
               <el-select 
                 v-model="form.to_station" 
@@ -61,22 +61,47 @@
           </el-col>
         </el-row>
         
-        <el-form-item label="出发日期" prop="train_date">
-          <el-date-picker
-            v-model="form.train_date"
-            type="date"
-            placeholder="选择日期"
-            format="YYYY-MM-DD"
-            value-format="YYYY-MM-DD"
-            :disabled-date="disabledDate"
-            style="width: 200px;"
-          />
-        </el-form-item>
+        <el-row :gutter="20">
+          <el-col :xs="24" :sm="12">
+            <el-form-item label="出发日期" prop="train_date">
+              <el-date-picker
+                v-model="form.train_date"
+                type="date"
+                placeholder="选择日期"
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
+                :disabled-date="disabledDate"
+                style="width: 100%;"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12">
+            <el-form-item label="时间范围">
+              <el-time-select
+                v-model="form.start_time_min"
+                placeholder="最早"
+                start="00:00"
+                step="00:30"
+                end="23:30"
+                style="width: 45%;"
+              />
+              <span style="display: inline-block; width: 10%; text-align: center;">-</span>
+              <el-time-select
+                v-model="form.start_time_max"
+                placeholder="最晚"
+                start="00:00"
+                step="00:30"
+                end="23:30"
+                style="width: 45%;"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
         
         <el-divider content-position="left">筛选条件</el-divider>
         
         <el-form-item label="车次类型">
-          <el-checkbox-group v-model="form.train_types">
+          <el-checkbox-group v-model="form.train_types" class="checkbox-grid">
             <el-checkbox label="G">高铁 G</el-checkbox>
             <el-checkbox label="D">动车 D</el-checkbox>
             <el-checkbox label="C">城际 C</el-checkbox>
@@ -88,7 +113,7 @@
         
         <el-form-item label="席别优先级" prop="seat_types">
           <div class="seat-priority-container">
-            <el-checkbox-group v-model="form.seat_types">
+            <el-checkbox-group v-model="form.seat_types" class="checkbox-grid">
                <el-checkbox v-for="(label, key) in seatTypeMap" :key="key" :label="key">{{ label }}</el-checkbox>
             </el-checkbox-group>
 
@@ -137,71 +162,63 @@
           <div class="form-tip">留空表示不限车次。点击搜索按钮可根据出发到达站和日期获取车次。</div>
         </el-form-item>
         
-        <el-form-item label="出发时间段">
-          <el-time-select
-            v-model="form.start_time_min"
-            placeholder="最早"
-            start="00:00"
-            step="00:30"
-            end="23:30"
-            style="width: 120px;"
-          />
-          <span style="margin: 0 8px;">至</span>
-          <el-time-select
-            v-model="form.start_time_max"
-            placeholder="最晚"
-            start="00:00"
-            step="00:30"
-            end="23:30"
-            style="width: 120px;"
-          />
-        </el-form-item>
+
         
         <el-divider content-position="left">乘车人</el-divider>
         
         <el-form-item label="乘车人" prop="passengers">
-          <div v-for="(p, index) in form.passengers" :key="index" class="passenger-row">
-            <el-input v-model="p.passenger_name" placeholder="姓名" style="width: 100px;" disabled />
-            <el-input v-model="p.passenger_id_no" placeholder="身份证号" style="width: 180px;" disabled />
-            <el-select v-model="p.passenger_type" placeholder="票种" style="width: 100px;">
-                <el-option label="成人票" value="1" />
-                <el-option label="儿童票" value="2" />
-                <el-option label="学生票" value="3" />
-                <el-option label="残军票" value="4" />
-            </el-select>
-            <el-input v-model="p.mobile_no" placeholder="手机号" style="width: 130px;" disabled />
-            <el-button type="danger" :icon="Delete" circle @click="removePassenger(index)" />
-          </div>
-          <el-button type="success" text @click="openPassengerDialog">
-            <el-icon><User /></el-icon>
-            从联系人添加
+          <el-table :data="form.passengers" border style="width: 100%; margin-bottom: 15px;">
+             <el-table-column prop="passenger_name" label="姓名" min-width="100" align="center" />
+             <el-table-column prop="passenger_id_no" label="身份证号" min-width="180" align="center" />
+             <el-table-column prop="passenger_type" label="票种" min-width="130" align="center">
+               <template #default="{ row }">
+                 <el-select v-model="row.passenger_type" size="small" style="width: 100px;">
+                   <el-option label="成人票" value="1" />
+                   <el-option label="儿童票" value="2" />
+                   <el-option label="学生票" value="3" />
+                   <el-option label="残军票" value="4" />
+                 </el-select>
+               </template>
+             </el-table-column>
+             <el-table-column prop="mobile_no" label="手机号" min-width="130" align="center" />
+             <el-table-column label="操作" min-width="70" align="center">
+               <template #default="{ $index }">
+                  <el-button type="danger" link :icon="Delete" @click="removePassenger($index)" />
+               </template>
+             </el-table-column>
+          </el-table>
+
+          <el-button type="success" plain @click="openPassengerDialog" style="width: 100%; border-style: dashed;">
+            <el-icon><Plus /></el-icon>
+            添加乘车人
           </el-button>
         </el-form-item>
         
         <el-divider content-position="left">任务配置</el-divider>
         
         <el-row :gutter="20">
-          <el-col :span="8">
+          <el-col :xs="10" :sm="8">
             <el-form-item label="刷票间隔">
-              <el-input-number v-model="form.query_interval" :min="3" :max="60" />
-              <span style="margin-left: 8px;">秒</span>
+              <el-input-number v-model="form.query_interval" :min="3" :max="60" style="width: 100%;" />
+              <!-- <span style="margin-left: 8px;">秒</span> -->
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :xs="14" :sm="8">
             <el-form-item label="最大重试">
-              <div style="display: flex; align-items: center; gap: 8px;">
+              <div class="retry-wrapper">
                 <el-input-number 
                   v-if="!isInfiniteRetry" 
                   v-model="form.max_retry_count" 
                   :min="1" 
-                  :max="10000" 
+                  :max="10000"
+                  class="retry-input"
                 />
-                <span v-else style="color: #409EFF;">无限循环</span>
+                <span v-else class="infinite-text">无限循环</span>
                 <el-checkbox v-model="isInfiniteRetry" @change="handleInfiniteChange" label="无限" />
               </div>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :xs="24" :sm="8">
             <el-form-item label="自动提交">
               <el-switch v-model="form.auto_submit" />
             </el-form-item>
@@ -209,7 +226,7 @@
         </el-row>
         
         <el-form-item>
-          <el-button type="primary" @click="handleSubmit" :loading="submitting">
+          <el-button type="success" @click="handleSubmit" :loading="submitting">
             {{ isEditMode ? '保存修改' : '创建任务' }}
           </el-button>
           <el-button @click="$router.back()">取消</el-button>
@@ -228,10 +245,10 @@
         @selection-change="val => selectedContacts = val"
         height="400"
       >
-        <el-table-column type="selection" width="55" />
-        <el-table-column property="passenger_name" label="姓名" width="120" />
-        <el-table-column property="passenger_id_no" label="证件号" width="200" show-overflow-tooltip />
-        <el-table-column property="passenger_type" label="类型" width="100">
+        <el-table-column type="selection" width="55" align="center" />
+        <el-table-column property="passenger_name" label="姓名" min-width="100" align="center" />
+        <el-table-column property="passenger_id_no" label="证件号" min-width="180" align="center" show-overflow-tooltip />
+        <el-table-column property="passenger_type" label="类型" min-width="80" align="center">
             <template #default="{ row }">
                 <el-tag v-if="row.passenger_type === '1'" size="small">成人</el-tag>
                 <el-tag v-else-if="row.passenger_type === '2'" size="small" type="success">儿童</el-tag>
@@ -239,7 +256,7 @@
                 <el-tag v-else size="small" type="info">其他</el-tag>
             </template>
         </el-table-column>
-         <el-table-column property="mobile_no" label="手机号" />
+         <el-table-column property="mobile_no" label="手机号" min-width="120" align="center" />
       </el-table>
       <template #footer>
         <span class="dialog-footer">
@@ -254,7 +271,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, computed, onMounted } from 'vue'
+import { ref, reactive, watch, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Delete, Plus, Search, User } from '@element-plus/icons-vue'
@@ -302,6 +319,11 @@ const form = reactive({
 })
 
 const isEditMode = computed(() => !!route.params.id)
+const isMobile = ref(false)
+
+const checkScreenSize = () => {
+  isMobile.value = window.innerWidth < 768
+}
 
 const seatTypeMap = {
   '9': '商务座',
@@ -612,6 +634,14 @@ onMounted(async () => {
       ElMessage.error('加载任务失败')
     }
   }
+
+  
+  checkScreenSize()
+  window.addEventListener('resize', checkScreenSize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkScreenSize)
 })
 </script>
 
@@ -632,6 +662,23 @@ onMounted(async () => {
   width: 100%;
 }
 
+.retry-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.retry-input {
+  flex: 1;
+}
+
+.infinite-text {
+  color: #409EFF;
+  flex: 1;
+  text-align: center;
+}
+
 .draggable-tags {
   display: flex;
   flex-wrap: wrap;
@@ -648,5 +695,40 @@ onMounted(async () => {
 
 .seat-tag:hover {
   opacity: 0.8;
+}
+
+
+@media (max-width: 768px) {
+  .checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 移动端每行3个 */
+    gap: 8px;
+  }
+  
+  .checkbox-grid .el-checkbox {
+    margin-right: 0;
+  }
+  
+  /* 移动端最大重试布局 */
+  .retry-wrapper {
+    flex-wrap: nowrap; /* 不换行 */
+  }
+  
+  .retry-input {
+    flex: 1; /* 自适应剩余空间 */
+    width: auto !important;
+  }
+  
+  .infinite-text {
+    width: auto;
+    text-align: center;
+    margin-bottom: 0;
+    flex: none;
+  }
+  
+  .retry-wrapper .el-checkbox {
+    margin-left: 4px; 
+    margin-right: 0;
+  }
 }
 </style>

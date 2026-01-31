@@ -159,12 +159,14 @@ async def update_task(
     if "passengers" in update_data:
         update_data["passengers"] = json.dumps(update_data["passengers"], ensure_ascii=False)
     
-    if "train_codes" in update_data and update_data["train_codes"]:
-        update_data["train_codes"] = ",".join(update_data["train_codes"])
-    if "train_types" in update_data and update_data["train_types"]:
-        update_data["train_types"] = ",".join(update_data["train_types"])
-    if "seat_types" in update_data and update_data["seat_types"]:
-        update_data["seat_types"] = ",".join(update_data["seat_types"])
+    if "train_codes" in update_data:
+        update_data["train_codes"] = ",".join(update_data["train_codes"]) if update_data["train_codes"] else None
+    
+    if "train_types" in update_data:
+        update_data["train_types"] = ",".join(update_data["train_types"]) if update_data["train_types"] else None
+    
+    if "seat_types" in update_data:
+        update_data["seat_types"] = ",".join(update_data["seat_types"]) if update_data["seat_types"] else None
     
     for key, value in update_data.items():
         setattr(task, key, value)

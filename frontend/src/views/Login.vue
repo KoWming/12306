@@ -1,8 +1,8 @@
 <template>
   <div class="login-page">
-    <el-row :gutter="20">
-      <el-col :span="12">
-        <el-card>
+    <el-row :gutter="12" class="login-row">
+      <el-col :xs="24" :span="12" class="mb-mobile">
+        <el-card class="box-card">
           <template #header>
             <div class="card-header">
               <span>账号列表</span>
@@ -14,53 +14,67 @@
           </template>
           
           <el-table :data="userStore.users" stripe highlight-current-row @current-change="handleSelectUser">
-            <el-table-column prop="username" label="用户名" />
-            <el-table-column prop="railway_username" label="12306账号" />
-            <el-table-column prop="is_logged_in" label="登录状态" width="100">
+            <el-table-column prop="username" label="用户名" min-width="120" align="center" />
+            <el-table-column prop="railway_username" label="12306账号" min-width="150" align="center" />
+            <el-table-column prop="is_logged_in" label="登录状态" min-width="100" align="center">
               <template #default="{ row }">
                 <el-tag :type="row.is_logged_in ? 'success' : 'info'">
                   {{ row.is_logged_in ? '已登录' : '未登录' }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="150">
+            <el-table-column label="操作" min-width="150" align="center">
               <template #default="{ row }">
-                <el-button 
-                  type="primary" 
-                  size="small" 
-                  text
-                  @click="startLogin(row)"
-                  :disabled="row.is_logged_in"
-                >
-                  登录
-                </el-button>
-                <el-popconfirm
-                  title="确定要删除这个账号吗？"
-                  confirm-button-text="确定"
-                  cancel-button-text="取消"
-                  @confirm="handleDeleteUser(row)"
-                >
-                  <template #reference>
-                    <el-button 
-                      type="danger" 
-                      size="small" 
-                      text
-                    >
-                      删除
-                    </el-button>
-                  </template>
-                </el-popconfirm>
+                <div style="display: flex; justify-content: center; align-items: center; gap: 1px;">
+                  <el-button 
+                    v-if="!row.is_logged_in"
+                    type="primary" 
+                    size="small" 
+                    text
+                    style="margin: 0"
+                    @click="startLogin(row)"
+                  >
+                    登录
+                  </el-button>
+                  <el-button 
+                    v-else
+                    type="warning" 
+                    size="small" 
+                    text
+                    style="margin: 0"
+                    @click="handleLogoutUser(row)"
+                  >
+                    退出
+                  </el-button>
+                  <el-popconfirm
+                    title="确定要删除这个账号吗？"
+                    confirm-button-text="确定"
+                    cancel-button-text="取消"
+                    @confirm="handleDeleteUser(row)"
+                  >
+                    <template #reference>
+                      <el-button 
+                        type="danger" 
+                        size="small" 
+                        text
+                        style="margin: 0"
+                      >
+                        删除
+                      </el-button>
+                    </template>
+                  </el-popconfirm>
+                </div>
               </template>
             </el-table-column>
+            
+            <template #empty>
+              <el-empty description="暂无账号" />
+            </template>
           </el-table>
-          
-          <el-empty v-if="userStore.users.length === 0" description="暂无账号">
-            <el-button type="primary" @click="showCreateDialog = true">添加账号</el-button>
-          </el-empty>
         </el-card>
       </el-col>
       
-      <el-col :span="12">
+      <el-col :xs="24" :span="12">
         <el-card>
           <template #header>
             <span>扫码登录</span>
@@ -210,6 +224,15 @@ const handleCreateUser = async () => {
   }
 }
 
+const handleLogoutUser = async (user) => {
+  try {
+    await userStore.logoutUser(user)
+    ElMessage.success('已退出登录')
+  } catch (error) {
+    ElMessage.error(error.message || '退出失败')
+  }
+}
+
 const startLogin = async (user) => {
   currentLoginUser.value = user
   loginState.value = 'loading'
@@ -337,5 +360,42 @@ const refreshQRCode = () => {
 .tips {
   color: #909399;
   font-size: 14px;
+}
+
+.login-row {
+  display: flex;
+  align-items: stretch;
+}
+
+.login-row .el-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.login-row .el-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 500px;
+}
+
+.login-row .el-card :deep(.el-card__body) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .login-row {
+    flex-wrap: wrap; /* 允许换行 */
+  }
+  
+  .mb-mobile {
+    margin-bottom: 12px; /* 移动端两列之间的间距 */
+  }
+  
+  .login-row .el-card {
+    min-height: 400px; /* 移动端减小最小高度 */
+  }
 }
 </style>

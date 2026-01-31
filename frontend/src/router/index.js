@@ -35,6 +35,11 @@ const routes = [
     path: '/task/:id',
     name: 'TaskDetail',
     component: () => import('../views/TaskDetail.vue')
+  },
+  {
+    path: '/notification',
+    name: 'NotificationSettings',
+    component: () => import('../views/NotificationSettings.vue')
   }
 ]
 

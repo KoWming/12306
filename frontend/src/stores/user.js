@@ -54,7 +54,7 @@ export const useUserStore = defineStore('user', () => {
     currentUser.value = user
     localStorage.setItem('currentUserId', user.id.toString())
     localStorage.setItem('currentUser', JSON.stringify(user))
-    
+
     // 如果用户已登录状态，先设置一个临时的 loginStatus 避免状态丢失
     if (user.is_logged_in) {
       loginStatus.value = {
@@ -65,7 +65,7 @@ export const useUserStore = defineStore('user', () => {
       // 持久化到 localStorage
       localStorage.setItem(`loginStatus_${user.id}`, JSON.stringify(loginStatus.value))
     }
-    
+
     // 然后从服务器获取最新状态
     await checkLoginStatus()
   }
@@ -97,6 +97,30 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  async function logoutUser(user) {
+    if (!user) return
+    try {
+      await api.logout(user.id)
+      // 清除本地存储的登录状态
+      localStorage.removeItem(`loginStatus_${user.id}`)
+
+      // 如果退出的是当前选中用户, 更新状态
+      if (currentUser.value && currentUser.value.id === user.id) {
+        loginStatus.value = null
+      }
+
+      // 更新列表中的状态
+      const target = users.value.find(u => u.id === user.id)
+      if (target) {
+        target.is_logged_in = false
+      }
+      return true
+    } catch (error) {
+      console.error('登出失败:', error)
+      throw error
+    }
+  }
+
   async function deleteUser(userId) {
     try {
       const res = await api.deleteUser(userId)
@@ -124,11 +148,11 @@ export const useUserStore = defineStore('user', () => {
   async function restoreUser() {
     if (initialized.value) return
     initialized.value = true
-    
+
     const savedUserId = localStorage.getItem('currentUserId')
     const savedUser = localStorage.getItem('currentUser')
     const savedLoginStatus = savedUserId ? localStorage.getItem(`loginStatus_${savedUserId}`) : null
-    
+
     // 先从缓存恢复，保证页面切换时状态不丢失
     if (savedUser) {
       try {
@@ -137,7 +161,7 @@ export const useUserStore = defineStore('user', () => {
         console.error('解析缓存用户失败:', e)
       }
     }
-    
+
     if (savedLoginStatus) {
       try {
         loginStatus.value = JSON.parse(savedLoginStatus)
@@ -145,7 +169,7 @@ export const useUserStore = defineStore('user', () => {
         console.error('解析缓存登录状态失败:', e)
       }
     }
-    
+
     // 然后从服务器刷新最新状态
     if (savedUserId) {
       try {
@@ -175,6 +199,7 @@ export const useUserStore = defineStore('user', () => {
     selectUser,
     checkLoginStatus,
     logout,
+    logoutUser,
     deleteUser,
     restoreUser
   }
