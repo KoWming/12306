@@ -78,7 +78,8 @@ def ensure_directories():
     
     station_file = Path(settings.STATION_FILE)
     if not station_file.exists():
-        backup_file = Path(__file__).parent.parent.parent / "data" / "assets" / "station_name.js"
+        # 从 Dockerfile 中创建的备份位置复制文件
+        backup_file = Path("/app/assets_backup/station_name.js")
         if backup_file.exists():
             shutil.copy2(backup_file, station_file)
             print(f"[初始化] 已复制车站数据文件: {station_file}")

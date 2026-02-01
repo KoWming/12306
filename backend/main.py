@@ -19,6 +19,7 @@ from fastapi.staticfiles import StaticFiles
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.core.config import get_settings, ensure_directories
+from app.core.logging import setup_logging
 from app.core.database import init_db, close_db
 from app.api import auth, trains, tasks, users, config
 from app.tasks.scheduler import get_scheduler
@@ -35,6 +36,9 @@ async def lifespan(app: FastAPI):
     
     # 确保目录存在
     ensure_directories()
+    
+    # 初始化日志系统
+    setup_logging()
     
     # 初始化数据库
     await init_db()

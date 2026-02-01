@@ -28,6 +28,10 @@ COPY backend /app/backend
 # 复制前端构建产物
 COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
 
+# 创建备份目录并复制必要的数据文件
+RUN mkdir -p /app/assets_backup
+COPY backend/data/assets/station_name.js /app/assets_backup/
+
 # 切换到 backend 目录作为工作目录
 WORKDIR /app/backend
 
