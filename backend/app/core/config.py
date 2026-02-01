@@ -3,14 +3,13 @@
 """
 核心配置模块
 
-包含应用的所有配置项
+包含应用的所有配置项以及目录和数据文件的初始化逻辑
 """
 
-import os
+import shutil
 from pathlib import Path
 from functools import lru_cache
 from pydantic_settings import BaseSettings
-from typing import Optional
 
 
 class Settings(BaseSettings):
@@ -64,14 +63,25 @@ def get_settings() -> Settings:
 
 # 创建必要的目录
 def ensure_directories():
-    """确保必要的目录存在"""
+    """确保必要的目录和文件存在"""
     settings = get_settings()
     
     dirs = [
         Path("./data"),
         Path(settings.SESSION_DIR),
         Path(settings.LOG_DIR),
+        Path("./data/assets"),
     ]
     
     for d in dirs:
         d.mkdir(parents=True, exist_ok=True)
+    
+    station_file = Path(settings.STATION_FILE)
+    if not station_file.exists():
+        backup_file = Path(__file__).parent.parent.parent / "data" / "assets" / "station_name.js"
+        if backup_file.exists():
+            shutil.copy2(backup_file, station_file)
+            print(f"[初始化] 已复制车站数据文件: {station_file}")
+        else:
+            print(f"[警告] 未找到车站数据文件备份: {backup_file}")
+            print(f"[警告] 请手动将 station_name.js 文件放置到: {station_file}")
